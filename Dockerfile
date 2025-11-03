@@ -1,26 +1,25 @@
-FROM eclipse-temurin:17-jdk AS build
+# Etapa 1: build do projeto
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+WORKDIR /app
 
-WORKDIR /workspace/app
-
-COPY mvnw .
-COPY .mvn .mvn
+# Copia o pom.xml e baixa dependências
 COPY pom.xml .
-COPY src src
+RUN mvn dependency:go-offline
 
-RUN chmod -R 777 ./mvnw
+# Copia o restante do código e compila
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-RUN ./mvnw install -DskipTests
-
-RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
-
+# Etapa 2: imagem final para rodar o app
 FROM eclipse-temurin:17-jdk
+WORKDIR /app
 
-VOLUME /tmp
+# Copia o .jar gerado da etapa anterior
+COPY --from=build /app/target/*.jar app.jar
 
-ARG DEPENDENCY=/workspace/app/target/dependency
+# Porta padrão do Spring Boot
+EXPOSE 8080
 
-COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
-COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
-COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
+ENTRYPOINT ["java","-jar","app.jar"]
 
-ENTRYPOINT ["java","-cp","app:app/lib/*","com.empresa.sitegirabar.SitegirabarApplication"]
+
