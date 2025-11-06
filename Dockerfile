@@ -2,7 +2,8 @@
 FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copia o POM e baixa dependências primeiro
+# Copia o POM e baixa dependências primeir
+COPY .m2 /root/.m2
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
