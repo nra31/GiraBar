@@ -1,4 +1,4 @@
-# Etapa 1: Build com cache Maven
+# Etapa 1: Build com Maven
 FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
@@ -10,8 +10,8 @@ RUN mvn dependency:go-offline -B
 COPY . .
 RUN mvn clean package -DskipTests -Dmaven.test.skip=true -T 1C
 
-# Etapa 2: Runtime leve
-FROM eclipse-temurin:17-jdk-slim
+# Etapa 2: Runtime leve e estável
+FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Copia o JAR da etapa anterior
@@ -20,8 +20,9 @@ COPY --from=build /app/target/*.jar app.jar
 # Expõe a porta padrão
 EXPOSE 8080
 
-# Define o comando de inicialização
+# Comando de inicialização
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
 
 
 
