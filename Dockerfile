@@ -1,28 +1,32 @@
-# Etapa 1: Build com Maven
-FROM maven:3.9.9-eclipse-temurin-17 AS build
-WORKDIR /app
+FROM eclipse-temurin:17-jdk AS build
 
-# Copia o POM e baixa dependências primeir
-COPY .m2 /root/.m2
+WORKDIR /workspace/app
+
+COPY mvnw .
+COPY .mvn .mvn
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+COPY src src
 
-# Copia o restante do código e compila
-COPY . .
-RUN mvn clean package -DskipTests -Dmaven.test.skip=true -T 1C
+RUN chmod -R 777 ./mvnw
 
-# Etapa 2: Runtime Java
+RUN ./mvnw install -DskipTests
+
+RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
+
 FROM eclipse-temurin:17-jdk
-WORKDIR /app
 
-# Copia o JAR da etapa anterior
-COPY --from=build /app/target/*.jar app.jar
+VOLUME /tmp
 
-# Expõe a porta padrão
-EXPOSE 8080
+ARG DEPENDENCY=/workspace/app/target/dependency
 
-# Executa o app
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
+COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
+COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
+
+ENTRYPOINT ["java","-cp","app:app/lib/*","com.generation.blogpessoal.BlogpessoalApplication"]
+
+
+
 
 
 
