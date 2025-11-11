@@ -19,14 +19,14 @@ public class JwtService {
 
     private static final String SECRET = "c25ea55d6f2f9835b0359d10f13fd61b388d56615b094b04b4b0f0a5273b157d";
     private static final Duration EXPIRATION_DURATION = Duration.ofMinutes(60);
-    
+
     private final SecretKey signingKey;
-    
+
     public JwtService() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
-        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
+        // ✅ Forma simples, sem Base64
+        this.signingKey = Keys.hmacShaKeyFor(SECRET.getBytes());
     }
-    
+
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
             .verifyWith(signingKey)
@@ -39,13 +39,9 @@ public class JwtService {
         return extractAllClaims(token).getSubject();
     }
 
-    public Date extractExpiration(String token) {
-        return extractAllClaims(token).getExpiration();
-    }
-
     public boolean validateToken(String token, UserDetails userDetails) {
         Claims claims = extractAllClaims(token);
-        return claims.getSubject().equals(userDetails.getUsername()) && 
+        return claims.getSubject().equals(userDetails.getUsername()) &&
                claims.getExpiration().after(new Date());
     }
 
@@ -58,5 +54,4 @@ public class JwtService {
             .signWith(signingKey)
             .compact();
     }
-    
 }
